@@ -1,3 +1,7 @@
+"use client";
+
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 export default function SimpleTradingDashboardStarter() {
   const stats = [
     { label: "總資產", value: "$1,252.64", sub: "+12.4%" },
@@ -18,6 +22,16 @@ export default function SimpleTradingDashboardStarter() {
     "14:32 BTCUSDT 訊號更新完成",
     "14:35 風控檢查完成，系統正常",
     "14:40 無待處理指令",
+  ];
+
+  const chartData = [
+    { time: '09:00', value: 1150 },
+    { time: '10:00', value: 1180 },
+    { time: '11:00', value: 1160 },
+    { time: '12:00', value: 1210 },
+    { time: '13:00', value: 1190 },
+    { time: '14:00', value: 1230 },
+    { time: '15:00', value: 1252.64 },
   ];
 
   return (
@@ -47,10 +61,21 @@ export default function SimpleTradingDashboardStarter() {
           <div className="xl:col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">資產走勢</h2>
-              <div className="text-sm text-slate-400">示意版</div>
+              <div className="text-sm text-slate-400">近六小時</div>
             </div>
-            <div className="h-72 rounded-2xl border border-dashed border-slate-700 flex items-center justify-center text-slate-500">
-              這裡之後可接入圖表元件，例如 Recharts / TradingView
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis dataKey="time" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} domain={['dataMin - 50', 'dataMax + 50']} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }}
+                    itemStyle={{ color: '#34d399' }}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
