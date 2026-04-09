@@ -1,6 +1,16 @@
 "use client";
 
-export default function AgentSummaryCard() {
+import React from 'react';
+
+// 這段定義是為了解決你截圖中的紅字錯誤
+interface AgentSummaryCardProps {
+  botData?: any;
+}
+
+export default function AgentSummaryCard({ botData }: AgentSummaryCardProps) {
+  // 從資料中抓取版本號[cite: 1]
+  const currentVersion = botData?.bot_version || "0409V5";
+
   return (
     <div className="h-full rounded-[24px] bg-white dark:bg-[#161A25] border border-[#D8D2CA] dark:border-[#2B3139] p-6 lg:p-8 shadow-sm flex flex-col justify-between transition-colors duration-300">
       <div>
@@ -9,7 +19,7 @@ export default function AgentSummaryCard() {
           <div className="text-right">
             <div className="text-[10px] text-[#6B7280] dark:text-[#94A3B8] font-bold mb-0.5 uppercase tracking-wider">信心指數</div>
             <div className="text-xl font-mono font-black text-[#10B981]">72%</div>
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5">0409V5 網格引擎</div>
+            <div className="text-[9px] text-[#9CA3AF] mt-0.5">{currentVersion} 網格引擎</div>
           </div>
         </div>
         
@@ -28,8 +38,8 @@ export default function AgentSummaryCard() {
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-[#F3F4F6] dark:divide-[#2B3139] flex items-center justify-between">
-         <span className="text-[10px] text-[#9CA3AF] font-bold uppercase">Strategy: 0409V5</span>
+      <div className="mt-4 pt-4 border-t border-[#F3F4F6] dark:border-[#2B3139] flex items-center justify-between">
+         <span className="text-[10px] text-[#9CA3AF] font-bold uppercase">Strategy: {currentVersion}</span>
          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
       </div>
     </div>
