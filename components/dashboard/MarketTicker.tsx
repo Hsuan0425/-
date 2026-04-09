@@ -1,6 +1,16 @@
 "use client";
 
-export default function MarketTicker() {
+import React from 'react';
+
+// 定義 Props 介面，讓組件能接收來自 page.tsx 的 botData
+interface MarketTickerProps {
+  botData?: any;
+}
+
+export default function MarketTicker({ botData }: MarketTickerProps) {
+  // 核心改動：從 botData 抓取版本號，若無資料則顯示預設值
+  const currentVersion = botData?.bot_version || "0409V5";
+
   const tickers = [
     { coin: "BTC", price: "71,363.78", high: "71,713", low: "67,760", rsi: 45, status: "趨勢轉弱" },
     { coin: "ETH", price: "2,185.28", high: "2,219", low: "2,183", rsi: 72, status: "動能過熱" }, 
@@ -11,7 +21,11 @@ export default function MarketTicker() {
 
   return (
     <div className="h-full rounded-[24px] border border-[#ECE8E3] dark:border-[#2B3139] bg-white dark:bg-[#161A25] p-6 shadow-sm transition-colors duration-300">
-      <h3 className="text-lg font-bold text-[#111827] dark:text-[#F8FAFC] mb-5">市場動能監測 (0409V2)</h3>
+      {/* 修正：將標題改為動態讀取 currentVersion */}
+      <h3 className="text-lg font-bold text-[#111827] dark:text-[#F8FAFC] mb-5">
+        市場動能監測 ({currentVersion})
+      </h3>
+      
       <div className="space-y-3">
         {tickers.map((t) => {
           const isOverbought = t.rsi >= 72;

@@ -1,147 +1,133 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from 'react';
 
-export default function TradingCalendar() {
-  const [isClient, setIsClient] = useState(false);
+interface TradingCalendarProps {
+  botData?: {
+    updated_at: string;
+    history?: { [key: string]: number };
+  };
+}
+
+export default function TradingCalendar({ botData }: TradingCalendarProps) {
+  // 1. 取得台灣時區今日資訊
   const now = new Date();
-  const [currentViewDate, setCurrentViewDate] = useState(new Date());
+  const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+  const currentYear = taiwanTime.getFullYear();
+  const currentMonth = taiwanTime.getMonth(); 
+  const todayDate = taiwanTime.getDate();
 
-  // 設定一年前為邊界
-  const entryDate = new Date();
-  entryDate.setFullYear(now.getFullYear() - 1);
+  // 2. 計算當月排版資訊
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  // 計算月底後需要補齊多少空格到週日 (SUN)
+  const lastDayOfMonth = new Date(currentYear, currentMonth, daysInMonth).getDay();
+  const adjustedLastDay = lastDayOfMonth === 0 ? 7 : lastDayOfMonth; 
+  const suffixEmptySlots = 7 - adjustedLastDay;
 
-  // 計算該月資訊
-  const getDaysInMonth = (year: number, month: number) => {
-    const firstDay = new Date(year, month, 1).getDay();
-    // 修正為週一開始 (0:一, 1:二... 6:日)
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-    const days = new Date(year, month + 1, 0).getDate();
-    return { startOffset, days };
+  // 3. 數據源
+  const allMonthData: { [key: number]: number } = {
+    1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 2, 9: 6, 10: 0
   };
 
-  const { startOffset, days } = getDaysInMonth(currentViewDate.getFullYear(), currentViewDate.getMonth());
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const prefixEmptySlots = Array.from({ length: adjustedFirstDay }, (_, i) => i);
+  // 產生下個月的補齊日期 (1, 2, 3...)
+  const nextMonthDays = Array.from({ length: suffixEmptySlots }, (_, i) => i + 1);
 
-  // 模擬損益獲取函式 (未來對接 status.json)
-  const getDailyPnL = (day: number) => {
-    const seed = (currentViewDate.getMonth() + 1) * day;
-    if (seed % 7 === 0) return 0;
-    return (seed % 5 === 0) ? -(seed % 20) : (seed % 30);
-  };
-
-  // 💡 新增：計算當月總盈虧
-  const calculateMonthlyTotal = () => {
+  // 週小計計算邏輯
+  const getWeeklyTotal = (dayOfSun: number) => {
     let total = 0;
-    for (let d = 1; d <= days; d++) {
-      total += getDailyPnL(d);
+    for (let i = dayOfSun - 6; i <= dayOfSun; i++) {
+      if (i > 0 && i <= todayDate) {
+        total += allMonthData[i] || 0;
+      }
     }
     return total;
   };
 
-  const monthlyTotal = calculateMonthlyTotal();
-
-  const adjustMonth = (offset: number) => {
-    const newDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + offset, 1);
-    if (offset > 0 && newDate > now) return;
-    if (offset < 0 && newDate < new Date(entryDate.getFullYear(), entryDate.getMonth(), 1)) return;
-    setCurrentViewDate(newDate);
-  };
-
-  const isRightDisabled = currentViewDate.getFullYear() === now.getFullYear() && currentViewDate.getMonth() === now.getMonth();
-  const isLeftDisabled = currentViewDate.getFullYear() === entryDate.getFullYear() && currentViewDate.getMonth() === entryDate.getMonth();
-
-  if (!isClient) return <div className="h-[450px] animate-pulse bg-white dark:bg-[#161A25] rounded-[24px]"></div>;
-
-  const numWeeks = Math.ceil((startOffset + days) / 7);
-
   return (
-    <div className="rounded-[24px] border border-[#D8D2CA] dark:border-[#2B3139] bg-white dark:bg-[#161A25] p-6 lg:p-8 shadow-sm transition-colors duration-300">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        {/* 💡 修改：動態標題與總計顯示 */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-[#111827] dark:text-[#F8FAFC]">錢錢去哪了</h3>
-            <span className="text-xs font-mono text-[#9CA3AF] dark:text-[#64748B]">
-              ({currentViewDate.getFullYear()} / {currentViewDate.getMonth() + 1})
-            </span>
-          </div>
-          <div className={`text-sm font-black mt-1 ${monthlyTotal >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
-            當月累計損益：{monthlyTotal > 0 ? "+" : ""}{monthlyTotal.toFixed(1)} USDT
-          </div>
-        </div>
-
-        <div className="flex items-center h-8 bg-[#F9FAFB] dark:bg-[#1E2330] rounded-lg border border-[#ECE8E3] dark:border-[#2B3139] p-1">
-          <button 
-            onClick={() => adjustMonth(-1)} 
-            disabled={isLeftDisabled} 
-            className={`px-2 transition-opacity ${isLeftDisabled ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-[#2B3139]'}`}
-          >←</button>
-          <div className="px-3 text-[11px] font-bold text-[#111827] dark:text-[#E2E8F0] border-x border-[#ECE8E3] dark:border-[#2B3139] mx-1">
-            {currentViewDate.getFullYear()} / {currentViewDate.getMonth() + 1}
-          </div>
-          <button 
-            onClick={() => adjustMonth(1)} 
-            disabled={isRightDisabled} 
-            className={`px-2 transition-opacity ${isRightDisabled ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-[#2B3139]'}`}
-          >→</button>
+    <div className="bg-white dark:bg-[#1C2127] rounded-3xl p-6 shadow-sm border border-[#ECE8E3] dark:border-[#2B3139] h-full">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-black text-[#1F2937] dark:text-white">
+            錢錢來時路 <span className="text-[#9CA3AF] font-normal text-sm ml-2">{currentYear} / {currentMonth + 1}</span>
+          </h3>
+          <p className="text-xs text-green-600 font-bold mt-1">
+            當月累計獲利：+{days.reduce((acc, d) => acc + (d <= todayDate ? (allMonthData[d] || 0) : 0), 0)} USDT
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-8 gap-2">
-        {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(h => (
-          <div key={h} className="text-[10px] text-center font-bold text-[#9CA3AF] mb-2">{h}</div>
+        {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN', '週小計'].map(d => (
+          <div key={d} className="text-[10px] font-bold text-[#9CA3AF] text-center pb-2 uppercase">{d}</div>
         ))}
-        <div className="text-[10px] text-center font-bold text-[#111827] dark:text-[#94A3B8] border-l border-[#ECE8E3] dark:border-[#2B3139] pl-2 mb-2">週小計</div>
 
-        {Array.from({ length: numWeeks }).map((_, weekIdx) => {
-          let currentWeekSum = 0;
-          
+        {/* 1. 月初補白 (不顯示日期) */}
+        {prefixEmptySlots.map(i => <div key={`pre-${i}`} />)}
+
+        {/* 2. 當月日期循環 */}
+        {days.map((day) => {
+          const isToday = day === todayDate;
+          const isFuture = day > todayDate;
+          const pnl = allMonthData[day] || 0;
+          const isSunday = (day + adjustedFirstDay) % 7 === 0;
+
           return (
-            <React.Fragment key={weekIdx}>
-              {Array.from({ length: 7 }).map((_, dayIdx) => {
-                const pos = weekIdx * 7 + dayIdx;
-                const dateNum = pos - startOffset + 1;
-                const isValidDate = dateNum > 0 && dateNum <= days;
-                
-                const pnl = isValidDate ? getDailyPnL(dateNum) : 0;
-                currentWeekSum += pnl;
-
-                const isToday = isValidDate && 
-                                currentViewDate.getFullYear() === now.getFullYear() && 
-                                currentViewDate.getMonth() === now.getMonth() && 
-                                dateNum === now.getDate();
-
-                if (!isValidDate) return <div key={pos} className="aspect-square opacity-0"></div>;
-
-                return (
-                  <div key={pos} className={`aspect-square flex flex-col justify-between p-1.5 rounded-lg border transition-all bg-white dark:bg-[#1E2330] ${
-                    isToday ? 'border-[#C7A86D] ring-1 ring-[#C7A86D]' : 'border-[#ECE8E3] dark:border-[#2B3139]'
-                  } hover:border-[#111827] dark:hover:border-[#94A3B8]`}>
-                    <span className="text-[9px] text-[#9CA3AF] dark:text-[#64748B] font-bold">{dateNum}</span>
-                    <span className={`text-[10px] text-center font-bold ${pnl > 0 ? 'text-[#10B981]' : pnl < 0 ? 'text-[#EF4444]' : 'text-[#94A3B8]'}`}>
-                      {pnl !== 0 ? (pnl > 0 ? `+${pnl}` : pnl) : "0"}
-                    </span>
-                  </div>
-                );
-              })}
-
-              <div className={`aspect-square flex flex-col justify-center items-center rounded-lg border-l-4 ml-1 transition-colors ${
-                currentWeekSum >= 0 
-                  ? 'bg-[#F9FAFB] dark:bg-[#10B981]/10 border-[#10B981]' 
-                  : 'bg-[#FAF0EF] dark:bg-[#EF4444]/10 border-[#EF4444]'
-              }`}>
-                <span className="text-[8px] font-bold text-[#6B7280] dark:text-[#94A3B8]">Total</span>
-                <span className={`text-[10px] font-black ${currentWeekSum >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
-                  {currentWeekSum > 0 ? "+" : ""}{currentWeekSum.toFixed(1)}
+            <React.Fragment key={day}>
+              <div className={`aspect-square border rounded-xl flex flex-col items-center justify-center relative transition-all
+                ${isToday ? 'border-[#C7A86D] bg-[#FFFBF2] ring-1 ring-[#C7A86D] z-10' : 'border-[#F3F2EE] dark:border-[#2B3139]'}
+                ${isFuture ? 'bg-gray-50/30' : 'bg-white'}
+              `}>
+                <span className={`absolute top-1 left-1.5 text-[10px] ${isToday ? 'font-black text-[#C7A86D]' : 'text-[#9CA3AF]'}`}>
+                  {day}
                 </span>
+                {!isFuture && (
+                  <>
+                    {isToday && pnl === 0 ? (
+                      <span className="text-[9px] text-gray-400 italic">Trading...</span>
+                    ) : pnl !== 0 ? (
+                      <span className={`text-[11px] font-bold ${pnl > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {pnl > 0 ? `+${pnl}` : pnl}
+                      </span>
+                    ) : null}
+                  </>
+                )}
               </div>
+
+              {/* 每週日顯示一次小計 */}
+              {isSunday && (
+                <div className="flex items-center justify-center border-l border-dashed border-gray-100">
+                  <span className="text-[11px] font-black text-green-600">
+                    +{getWeeklyTotal(day)}
+                  </span>
+                </div>
+              )}
             </React.Fragment>
           );
         })}
+
+        {/* 3. 月底補齊下個月日期 (直到 SUN) */}
+        {nextMonthDays.map((nextDay) => (
+          <div key={`next-${nextDay}`} className="aspect-square border border-[#F3F2EE] border-dashed rounded-xl bg-gray-50/10 flex items-center justify-center relative">
+            <span className="absolute top-1 left-1.5 text-[10px] text-[#D1D5DB] font-light">
+              {nextDay}
+            </span>
+            {/* 下個月日期不顯示任何 PNL */}
+          </div>
+        ))}
+
+        {/* 4. 最後一週的週小計 (強行對齊到第 8 欄) */}
+        {suffixEmptySlots > 0 && (
+          <div className="flex items-center justify-center border-l border-dashed border-gray-100">
+            <span className="text-[11px] font-black text-green-600">
+              +{getWeeklyTotal(daysInMonth)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
