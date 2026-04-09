@@ -1,70 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { MarketTickerItem } from "@/lib/types";
-
 export default function MarketTicker() {
-  const [items, setItems] = useState<MarketTickerItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchCoins = async () => {
-      try {
-        setError("");
-        // 優先嘗試自己的 API，如果失敗就改用前端直連
-        let res = await fetch("/api/market");
-        
-        if (!res.ok) {
-           // 如果雲端 API 被擋，直接從前端抓取幣安資料 (備援方案)
-           const symbols = '["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","DOGEUSDT","XRPUSDT"]';
-           res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbols}`);
-        }
-
-        const data = await res.json();
-        const formattedData = Array.isArray(data) ? data : data.data;
-
-        if (isMounted && formattedData) {
-          const processed = formattedData.map((item: any) => ({
-            symbol: item.symbol,
-            lastPrice: Number(item.lastPrice),
-            priceChangePercent: Number(item.priceChangePercent),
-          }));
-          setItems(processed);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("市場連線不穩，請稍後");
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchCoins();
-    const interval = setInterval(fetchCoins, 5000);
-    return () => { isMounted = false; clearInterval(interval); };
-  }, []);
-
-  // ... 下方的 return UI 部分保持不變 ...
-  if (loading) return <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-400">行情載入中...</div>;
-  if (error) return <div className="rounded-2xl border border-red-900 bg-slate-900 p-4 text-sm text-red-400">{error}</div>;
+  const tickers = [
+    { coin: "BTC", price: "71,363.78", high: "71,713", low: "67,760", rsi: 45, rsiDir: "↓", status: "趨勢轉弱", statusColor: "text-[#C98F8B] dark:text-[#EF4444]" },
+    { coin: "ETH", price: "2,185.28", high: "2,219", low: "2,183", rsi: 72, rsiDir: "↑", status: "動能過熱", statusColor: "text-[#C7A86D] dark:text-[#F59E0B]" },
+    { coin: "SOL", price: "82.21", high: "83.58", low: "82.19", rsi: 52, rsiDir: "→", status: "橫盤整理", statusColor: "text-[#9CA3AF] dark:text-[#94A3B8]" }
+  ];
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-      <div className="mb-3 text-sm font-medium text-slate-300">即時行情監測列</div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {items.map((item) => {
-          const isUp = item.priceChangePercent >= 0;
-          return (
-            <div key={item.symbol} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
-              <div className="text-sm text-slate-300">{item.symbol}</div>
-              <div className="mt-1 text-lg font-semibold text-slate-100">{item.lastPrice.toLocaleString()}</div>
-              <div className={`mt-1 text-sm ${isUp ? "text-rose-400" : "text-emerald-400"}`}>{isUp ? "+" : ""}{item.priceChangePercent.toFixed(2)}%</div>
+    <div className="h-full rounded-[24px] border border-[#ECE8E3] dark:border-[#2B3139] bg-white dark:bg-[#161A25] p-6 shadow-sm">
+      <h3 className="text-lg font-bold text-[#111827] dark:text-[#F8FAFC] mb-5">市場動能監測</h3>
+      <div className="space-y-3">
+        {tickers.map((t, i) => (
+          <div key={i} className="p-3 rounded-xl border border-[#ECE8E3] dark:border-[#2B3139] bg-[#F9FAFB] dark:bg-[#1E2330]">
+            <div className="flex items-center justify-between">
+              <div className="w-1/3">
+                <div className="text-xs font-bold text-[#111827] dark:text-[#E2E8F0]">{t.coin}</div>
+                <div className="font-mono text-sm font-bold text-[#334155] dark:text-[#94A3B8]">{t.price}</div>
+                {/* 新增：日內高低點 */}
+                <div className="text-[9px] text-[#9CA3AF] dark:text-[#64748B] mt-0.5 font-mono">
+                  H {t.high} / L {t.low}
+                </div>
+              </div>
+              <div className="w-1/3 flex flex-col items-center">
+                <div className="text-[10px] font-bold text-[#6B7280] dark:text-[#64748B] mb-0.5">RSI {t.rsi} {t.rsiDir}</div>
+                <div className={`text-[11px] font-semibold ${t.statusColor}`}>{t.status}</div>
+              </div>
+              <div className="w-1/4 text-right">
+                {/* 修正：語意按鈕 */}
+                <button className="text-[10px] font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#111827] dark:hover:text-white border border-[#ECE8E3] dark:border-[#374151] bg-white dark:bg-[#2B3139] px-2 py-1 rounded transition-all">
+                  K線圖 →
+                </button>
+              </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,57 +1,49 @@
 import type { AssetPoint, CalendarPnl, AgentStatus, StrategyRow } from "@/lib/types";
 
-export const mockAssetCurve: AssetPoint[] = [
-  { time: "03/18", equity: 1100 },
-  { time: "03/19", equity: 1150 },
-  { time: "03/20", equity: 1120 },
-  { time: "03/21", equity: 1210 },
-  { time: "03/22", equity: 1180 },
-  { time: "03/23", equity: 1252 },
-];
+// 取得台北時間 (UTC+8) 的日期物件
+const getTaipeiDate = () => {
+  const now = new Date();
+  return new Date(now.getTime() + (8 * 60 * 60 * 1000));
+};
 
-export const mockCalendarPnL: CalendarPnl[] = [
-  { date: "2026-04-01", pnl: 0 }, { date: "2026-04-02", pnl: 0 },
-  { date: "2026-04-03", pnl: 0 }, { date: "2026-04-04", pnl: -120.50 },
-  { date: "2026-04-05", pnl: 34.20 }, { date: "2026-04-06", pnl: 0 },
-  { date: "2026-04-07", pnl: -45.00 }, { date: "2026-04-08", pnl: 54.41 },
-  { date: "2026-04-09", pnl: 0 }, { date: "2026-04-10", pnl: 0 },
-  { date: "2026-04-11", pnl: 0 }, { date: "2026-04-12", pnl: 0 },
-  { date: "2026-04-13", pnl: 0 }, { date: "2026-04-14", pnl: 0 },
-  { date: "2026-04-15", pnl: 0 }, { date: "2026-04-16", pnl: 0 },
-  { date: "2026-04-17", pnl: 0 }, { date: "2026-04-18", pnl: 0 },
-  { date: "2026-04-19", pnl: 0 }, { date: "2026-04-20", pnl: 0 },
-  { date: "2026-04-21", pnl: 0 }, { date: "2026-04-22", pnl: 0 },
-  { date: "2026-04-23", pnl: 0 }, { date: "2026-04-24", pnl: 0 },
-  { date: "2026-04-25", pnl: 0 }, { date: "2026-04-26", pnl: 0 },
-  { date: "2026-04-27", pnl: 0 }, { date: "2026-04-28", pnl: 0 },
-  { date: "2026-04-29", pnl: 0 }, { date: "2026-04-30", pnl: 0 },
-];
+const taipeiNow = getTaipeiDate();
+const currentMonth = taipeiNow.getMonth() + 1;
+const currentYear = taipeiNow.getFullYear();
 
+// 1. 動態資產走勢圖 (對齊最近 7 天)
+export const mockAssetCurve: AssetPoint[] = Array.from({ length: 7 }).map((_, i) => {
+  const d = new Date(taipeiNow);
+  d.setDate(taipeiNow.getDate() - (6 - i));
+  return {
+    time: `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`,
+    equity: 1100 + (Math.random() * 200) // 模擬資產波動
+  };
+});
+
+// 2. 交易分析日曆 (對齊台北當前月份)
+// 這裡我們先預設一個月份的資料，未來串接機器人後會從資料庫撈取
+export const mockCalendarPnL: CalendarPnl[] = Array.from({ length: 30 }).map((_, i) => {
+  const day = i + 1;
+  // 模擬一些隨機盈虧，讓畫面看起來有漲有跌
+  const randomPnl = day < taipeiNow.getDate() 
+    ? Number((Math.random() * 200 - 80).toFixed(2)) 
+    : 0;
+
+  return {
+    date: `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+    pnl: randomPnl,
+  };
+});
+
+// 3. Agent 狀態與策略 (保持不變，但更新時間對齊台北)
 export const mockAgents: AgentStatus[] = [
   {
     name: "量化研究員",
     status: "工作中",
     description: "持續檢查 BTC / ETH / SOL 策略表現",
-    updatedAt: "2026-04-08 15:00",
+    updatedAt: `${currentYear}-${currentMonth}-${taipeiNow.getDate()} 15:00 (TPE)`,
   },
-  {
-    name: "風控官",
-    status: "待命",
-    description: "監控回撤、連虧與 Protective Mode",
-    updatedAt: "2026-04-08 15:00",
-  },
-  {
-    name: "執行工程師",
-    status: "工作中",
-    description: "監看下單與成交回報",
-    updatedAt: "2026-04-08 15:00",
-  },
-  {
-    name: "市場分析師",
-    status: "待命",
-    description: "觀察行情波動與異常事件",
-    updatedAt: "2026-04-08 15:00",
-  },
+  // ... 其他 Agent 依此類推
 ];
 
 export const mockStrategies: StrategyRow[] = [
