@@ -1,6 +1,10 @@
 "use client";
 
-export default function StrategyTable() {
+interface StrategyTableProps {
+  botData?: any;
+}
+
+export default function StrategyTable({ botData }: StrategyTableProps) {
   const activePositions = [
     { coin: "BTCUSDT", qty: "0.015", pnl: "+2.4%", tpStatus: "TP1 DONE" },
     { coin: "ETHUSDT", qty: "0.12", pnl: "+4.1%", tpStatus: "TP2 DONE" },
