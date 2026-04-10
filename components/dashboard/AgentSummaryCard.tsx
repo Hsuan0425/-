@@ -2,14 +2,25 @@
 
 import React from 'react';
 
-// 這段定義是為了解決你截圖中的紅字錯誤
+/**
+ * 定義接收資料的規格 (Props)
+ * botData 是從 JSONBin 抓回來的那一坨資料
+ */
 interface AgentSummaryCardProps {
-  botData?: any;
+  botData?: {
+    bot_version?: string;
+    last_updated?: string;
+    confidence_score?: string;
+    strategy_status?: string;
+    [key: string]: any; // 容許其他可能的欄位
+  };
 }
 
 export default function AgentSummaryCard({ botData }: AgentSummaryCardProps) {
-  // 從資料中抓取版本號[cite: 1]
+  // 提取資料，並設定預設值以防止報錯[cite: 1]
   const currentVersion = botData?.bot_version || "0409V5";
+  const confidence = botData?.confidence_score || "72%";
+  const statusText = botData?.strategy_status || "網格低接";
 
   return (
     <div className="h-full rounded-[24px] bg-white dark:bg-[#161A25] border border-[#D8D2CA] dark:border-[#2B3139] p-6 lg:p-8 shadow-sm flex flex-col justify-between transition-colors duration-300">
@@ -18,14 +29,16 @@ export default function AgentSummaryCard({ botData }: AgentSummaryCardProps) {
           <h3 className="text-lg font-bold dark:text-[#F8FAFC]">Agent 網格指令</h3>
           <div className="text-right">
             <div className="text-[10px] text-[#6B7280] dark:text-[#94A3B8] font-bold mb-0.5 uppercase tracking-wider">信心指數</div>
-            <div className="text-xl font-mono font-black text-[#10B981]">72%</div>
+            {/* 動態信心指數 */}
+            <div className="text-xl font-mono font-black text-[#10B981]">{confidence}</div>
             <div className="text-[9px] text-[#9CA3AF] mt-0.5">{currentVersion} 網格引擎</div>
           </div>
         </div>
         
         <div className="mb-6">
           <div className="text-[11px] font-bold text-[#6B7280] dark:text-[#94A3B8] mb-2 uppercase tracking-widest">當前策略狀態</div>
-          <div className="text-4xl font-black text-[#111827] dark:text-white mb-2 tracking-tighter">網格低接</div>
+          {/* 動態策略名稱 */}
+          <div className="text-4xl font-black text-[#111827] dark:text-white mb-2 tracking-tighter">{statusText}</div>
           <div className="text-[11px] text-[#C7A86D] font-bold mb-4">RSI 低於 55 尋求金叉或超賣進場</div>
           
           <div className="flex flex-wrap gap-2">
@@ -39,6 +52,7 @@ export default function AgentSummaryCard({ botData }: AgentSummaryCardProps) {
       </div>
 
       <div className="mt-4 pt-4 border-t border-[#F3F4F6] dark:border-[#2B3139] flex items-center justify-between">
+         {/* 動態策略版本號 */}
          <span className="text-[10px] text-[#9CA3AF] font-bold uppercase">Strategy: {currentVersion}</span>
          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
       </div>
