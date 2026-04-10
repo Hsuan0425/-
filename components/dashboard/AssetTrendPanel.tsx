@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 
-export default function AssetTrendPanel() {
+interface AssetTrendPanelProps {
+  botData?: any;
+}
+
+export default function AssetTrendPanel({ botData }: AssetTrendPanelProps) {
   const [isClient, setIsClient] = useState(false);
   const now = new Date();
   
